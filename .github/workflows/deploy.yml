@@ -1,0 +1,35 @@
+name: Deploy Portfolio
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE_ARN }}
+          aws-region: us-east-1
+
+      # If your site is plain static files, delete this step.
+      - name: Build site
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy to S3
+        run: |
+          # If you have a build step, deploy dist/.
+          # If static HTML/CSS in root, change ./dist to ./
+          aws s3 sync ./dist s3://${{ secrets.S3_BUCKET_NAME }} --delete
